@@ -4,6 +4,7 @@
 ```
 npm install
 ```
+(or yarn install) 
 
 ### Launching the Project
 ```
