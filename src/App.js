@@ -76,13 +76,17 @@ class BooksApp extends React.Component {
                               <select>
                                 <option value="none" disabled>Move to...</option>
 																{Object.keys(this.state.shelfLabels).map((label) => (
-                                <option value={label}>{this.state.shelfLabels[label]}</option>
+                                <option key={label} value={label}>{this.state.shelfLabels[label]}</option>
 																))}
                               </select>
                             </div>
                           </div>
                           <div className="book-title">{book.title}</div>
-                          <div className="book-authors">FIXME{book.authors}</div>
+                          <div className="book-authors">
+														{book.authors.map((author, index) => 
+															(<div key={index}>{author}</div>)
+														)}
+													</div>
                         </div>
                       </li>
 											))}
