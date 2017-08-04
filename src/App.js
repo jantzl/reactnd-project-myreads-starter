@@ -12,15 +12,15 @@ class BooksApp extends React.Component {
      */
     showSearchPage: false,
 		shelves : {
-			'currentlyReading' : [],
-			'wantToRead' : [],
-			'read' : []
+			'currentlyReading' : {},
+			'wantToRead' : {},
+			'read' : {} 
 		},
 		shelfLabels : {
 			'currentlyReading' : 'Currently Reading',
 			'wantToRead' : 'Want to Read',
 			'read' : 'Read',
-			'none' : 'None'
+			//'none' : 'None'
 		}
   }
 
@@ -28,12 +28,23 @@ class BooksApp extends React.Component {
 		BooksAPI.getAll().then((books) => {
 			this.setState( 
 				books.map((book) => {
-					this.state.shelves[book.shelf].push(book);
-					return this.state.shelves;
+					var shelves = this.state.shelves
+					shelves[book.shelf][book.id] = book;
+					return shelves;
 				})
 			)
 		});
 		console.log(this.state.shelves);
+	}
+
+	changeShelf(book, shelf) {
+		BooksAPI.update(book,shelf).then(result => {
+			var shelves = this.state.shelves
+			delete shelves[book.shelf][book.id];
+			book.shelf = shelf;
+			shelves[shelf][book.id] = book;
+			this.setState(shelves);
+		})
 	}
 
   render() {
@@ -58,14 +69,15 @@ class BooksApp extends React.Component {
             </div>
             <div className="list-books-content">
               <div>
-								{Object.keys(this.state.shelves).map((key) => (
-                <div className="bookshelf" key={key}>
-											{console.log(this.state.shelves[key])}
-                  <h2 className="bookshelf-title">{this.state.shelfLabels[key]}</h2>
+								{Object.keys(this.state.shelves).map((shelf) => (
+                <div className="bookshelf" key={shelf}>
+                  <h2 className="bookshelf-title">{this.state.shelfLabels[shelf]}</h2>
                   <div className="bookshelf-books">
                     <ol className="books-grid">
-											{this.state.shelves[key].map((book) => (
-                      <li key={book.id}>
+											{Object.keys(this.state.shelves[shelf]).map((bid) => {
+												var book = this.state.shelves[shelf][bid];
+												return (
+                      <li key={bid}>
                         <div className="book">
                           <div className="book-top">
                             <div className="book-cover" style={{ 
@@ -73,7 +85,9 @@ class BooksApp extends React.Component {
 															backgroundImage: `url(${book.imageLinks.smallThumbnail})` 
 														}}></div>
                             <div className="book-shelf-changer">
-                              <select>
+                              <select 
+																	value={book.shelf}
+																	onChange={(event) => this.changeShelf(book, event.target.value)}>
                                 <option value="none" disabled>Move to...</option>
 																{Object.keys(this.state.shelfLabels).map((label) => (
                                 <option key={label} value={label}>{this.state.shelfLabels[label]}</option>
@@ -89,7 +103,7 @@ class BooksApp extends React.Component {
 													</div>
                         </div>
                       </li>
-											))}
+											)})}
                     </ol>
                   </div>
                 </div>
