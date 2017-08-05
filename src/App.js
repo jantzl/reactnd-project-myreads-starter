@@ -1,6 +1,9 @@
 import React from 'react'
 import * as BooksAPI from './BooksAPI'
 import './App.css'
+import Book from './Book'
+import escapeRegExp from 'escape-string-regexp'
+import sortBy from 'sort-by'
 
 class BooksApp extends React.Component {
   state = {
@@ -11,21 +14,32 @@ class BooksApp extends React.Component {
      * pages, as well as provide a good URL they can bookmark and share.
      */
     showSearchPage: false,
+		query : '',
+		books : [ ],
 		shelves : {
-			'currentlyReading' : {},
-			'wantToRead' : {},
-			'read' : {} 
+			'currentlyReading' : { },
+			'wantToRead'       : { },
+			'read'             : { } 
 		},
 		shelfLabels : {
 			'currentlyReading' : 'Currently Reading',
-			'wantToRead' : 'Want to Read',
-			'read' : 'Read',
-			//'none' : 'None'
+			'wantToRead'       : 'Want to Read',
+			'read'             : 'Read',
 		}
   }
 
+  updateQuery = (query) => {
+    this.setState({query: query.trim()})
+  }
+
+  clearQuery = () => {
+    this.setState({query:''})
+  }
+
+
 	componentDidMount() {
 		BooksAPI.getAll().then((books) => {
+			this.setState( {books: books})
 			this.setState( 
 				books.map((book) => {
 					var shelves = this.state.shelves
@@ -34,10 +48,9 @@ class BooksApp extends React.Component {
 				})
 			)
 		});
-		console.log(this.state.shelves);
 	}
 
-	changeShelf(book, shelf) {
+	changeShelf = (book, shelf) => {
 		BooksAPI.update(book,shelf).then(result => {
 			var shelves = this.state.shelves
 			delete shelves[book.shelf][book.id];
@@ -48,6 +61,18 @@ class BooksApp extends React.Component {
 	}
 
   render() {
+		const {query} = this.state
+
+		let showingBooks
+		if (query) {
+			const match = new RegExp(escapeRegExp(query),'i')
+			showingBooks = this.state.books.filter((book) => match.test(book.title) || match.test(book.authors))
+		} else {
+			showingBooks = this.state.books
+		}
+
+		showingBooks.sort(sortBy('title'))
+
     return (
       <div className="app">
         {this.state.showSearchPage ? (
@@ -55,11 +80,24 @@ class BooksApp extends React.Component {
             <div className="search-books-bar">
               <a className="close-search" onClick={() => this.setState({ showSearchPage: false })}>Close</a>
               <div className="search-books-input-wrapper">
-                <input type="text" placeholder="Search by title or author"/>
+                <input 
+									type="text" 
+									value={query}
+									onChange={(event) => this.updateQuery(event.target.value)}
+									placeholder="Search by title or author"/>
               </div>
             </div>
             <div className="search-books-results">
-              <ol className="books-grid"></ol>
+              <ol className="books-grid">
+								{showingBooks.map((book) => {
+									var bid = book.id;
+									return (
+										<Book 
+											key={bid} bid={bid} book={book} 
+											labels={this.state.shelfLabels} 
+											onChangeShelf={this.changeShelf} />
+									)})}
+							</ol>
             </div>
           </div>
         ) : (
@@ -77,33 +115,11 @@ class BooksApp extends React.Component {
 											{Object.keys(this.state.shelves[shelf]).map((bid) => {
 												var book = this.state.shelves[shelf][bid];
 												return (
-                      <li key={bid}>
-                        <div className="book">
-                          <div className="book-top">
-                            <div className="book-cover" style={{ 
-															width: 128, height: 193, 
-															backgroundImage: `url(${book.imageLinks.smallThumbnail})` 
-														}}></div>
-                            <div className="book-shelf-changer">
-                              <select 
-																	value={book.shelf}
-																	onChange={(event) => this.changeShelf(book, event.target.value)}>
-                                <option value="none" disabled>Move to...</option>
-																{Object.keys(this.state.shelfLabels).map((label) => (
-                                <option key={label} value={label}>{this.state.shelfLabels[label]}</option>
-																))}
-                              </select>
-                            </div>
-                          </div>
-                          <div className="book-title">{book.title}</div>
-                          <div className="book-authors">
-														{book.authors.map((author, index) => 
-															(<div key={index}>{author}</div>)
-														)}
-													</div>
-                        </div>
-                      </li>
-											)})}
+													<Book 
+														key={bid} bid={bid} book={book} 
+														labels={this.state.shelfLabels} 
+														onChangeShelf={this.changeShelf} />
+												)})}
                     </ol>
                   </div>
                 </div>
