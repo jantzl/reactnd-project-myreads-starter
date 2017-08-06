@@ -5,13 +5,13 @@ import Book from './Book'
 
 class ListBooks extends Component {
 	static propTypes = {
-		shelves: PropTypes.object.isRequired,
+		books: PropTypes.array.isRequired,
 		labels: PropTypes.object.isRequired,
 		onChangeShelf: PropTypes.func.isRequired
 	}
 	
 	render () {
-		const {shelves, labels, onChangeShelf} = this.props
+		const {books, labels, onChangeShelf} = this.props
 
 		return (
 			<div className="list-books">
@@ -20,23 +20,24 @@ class ListBooks extends Component {
 				</div>
 				<div className="list-books-content">
 					<div>
-						{Object.keys(shelves).map((shelf) => (
+						{Object.keys(labels).map((shelf) => (
+						(shelf!='none') && (
 						<div className="bookshelf" key={shelf}>
 							<h2 className="bookshelf-title">{labels[shelf]}</h2>
 							<div className="bookshelf-books">
 								<ol className="books-grid">
-									{Object.keys(shelves[shelf]).map((bid) => {
-										var book = shelves[shelf][bid];
+									{books.filter(book => book.shelf === shelf)
+										.map((book) => {
 										return (
 											<Book
-												key={bid} bid={bid} book={book}
+												key={book.id} bid={book.id} book={book}
 												labels={labels}
 												onChangeShelf={onChangeShelf} />
 										)})}
 								</ol>
 							</div>
 						</div>
-						))}
+						)))}
 					</div>
 				</div>
 				<div className="open-search">

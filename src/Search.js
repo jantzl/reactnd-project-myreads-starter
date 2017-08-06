@@ -2,22 +2,36 @@ import React, {Component} from 'react'
 import {Link} from 'react-router-dom'
 import PropTypes from 'prop-types'
 import Book from './Book'
-import escapeRegExp from 'escape-string-regexp'
-import sortBy from 'sort-by'
+import * as BooksAPI from './BooksAPI'
 
 class Search extends Component {
 	static propTypes = {
-		books: PropTypes.array.isRequired,
 		labels: PropTypes.object.isRequired,
 		onChangeShelf: PropTypes.func.isRequired
 	}
 	
 	state = {
-		query: ''
+		books: [ ],
+		query: '',
+		error: false 
 	}
 
+	maxResults = 100
+
   updateQuery = (query) => {
-    this.setState({query: query.trim()})
+		this.setState( { query: query.trim(), 
+										 books: [ ], 
+										 error: false
+ 									} )
+    if (query) {
+			BooksAPI.search(query,this.maxResults).then((books) => {
+				if (books.error) {
+					console.log('got error');
+					this.setState( {error:true} )
+				} else 
+					this.setState( {books:books} )
+			});
+    }
   }
 
   clearQuery = () => {
@@ -25,18 +39,8 @@ class Search extends Component {
   }
 
 	render () {
-		const {books, labels, onChangeShelf} = this.props
-		const {query} = this.state
-
-    let showingBooks
-    if (query) {
-      const match = new RegExp(escapeRegExp(query),'i')
-      showingBooks = books.filter((book) => match.test(book.title) || match.test(book.authors))
-    } else {
-      showingBooks = books
-    }
-
-    showingBooks.sort(sortBy('title'))
+		const {labels, onChangeShelf} = this.props
+		const {query} = this.state.query
 
 		return (
 			<div className="search-books">
@@ -51,22 +55,22 @@ class Search extends Component {
 					</div>
 				</div>
 				<div className="search-books-results">
-				{showingBooks.length !== books.length && (
-					<div className='showing-books'>
-					<span>Now showing {showingBooks.length} of {books.length} total</span>
-					<button onClick={this.clearQuery}>Show all</button>
-					</div>
-				)}
-					<ol className="books-grid">
-						{showingBooks.map((book) => {
-							var bid = book.id;
-							return (
-								<Book
-									key={bid} bid={bid} book={book}
-									labels={labels}
-									onChangeShelf={onChangeShelf} />
-							)})}
-					</ol>
+					{this.state.error ?
+						( <div>No results</div> )
+					 : (
+						<ol className="books-grid">
+							{Object.keys(this.state.books).map((key) => {
+								var book = this.state.books[key];
+								var bid = book.id;
+								return (
+									<Book
+										key={bid} bid={bid} book={book}
+										labels={labels}
+										onChangeShelf={onChangeShelf} />
+								)
+							})}
+						</ol>
+					)}
 				</div>
 			</div>
 		)

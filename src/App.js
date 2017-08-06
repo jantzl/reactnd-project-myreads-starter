@@ -8,38 +8,28 @@ import * as BooksAPI from './BooksAPI'
 class BooksApp extends Component {
   state = {
 		books : [ ],
-		shelves : {
-			'currentlyReading' : { },
-			'wantToRead'       : { },
-			'read'             : { } 
-		},
 		shelfLabels : {
 			'currentlyReading' : 'Currently Reading',
 			'wantToRead'       : 'Want to Read',
 			'read'             : 'Read',
+			'none'             : 'None',
 		}
   }
 
 	componentDidMount() {
 		BooksAPI.getAll().then((books) => {
 			this.setState( {books: books})
-			this.setState( 
-				books.map((book) => {
-					var shelves = this.state.shelves
-					shelves[book.shelf][book.id] = book;
-					return shelves;
-				})
-			)
 		});
 	}
 
 	changeShelf = (book, shelf) => {
 		BooksAPI.update(book,shelf).then(result => {
-			var shelves = this.state.shelves
-			delete shelves[book.shelf][book.id];
+			console.log('setting shelf to [' + shelf + ']');
 			book.shelf = shelf;
-			shelves[shelf][book.id] = book;
-			this.setState(shelves);
+			//this.setState( {books: this.state.books})
+			BooksAPI.getAll().then((books) => {
+				this.setState( {books: books})
+			});
 		})
 	}
 
@@ -48,13 +38,12 @@ class BooksApp extends Component {
 			<div>
 				<Route exact path="/" render={() => (
 					<ListBooks 
-						shelves={this.state.shelves} 
+						books={this.state.books} 
 						labels={this.state.shelfLabels} 
 						onChangeShelf={this.changeShelf} />
 				)}/>
 				<Route exact path="/search" render={() => (
 					<Search 
-						books={this.state.books} 
 						labels={this.state.shelfLabels} 
 						onChangeShelf={this.changeShelf} />
 				)}/>
