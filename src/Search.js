@@ -51,6 +51,12 @@ class Search extends Component {
 					</div>
 				</div>
 				<div className="search-books-results">
+				{showingBooks.length !== books.length && (
+					<div className='showing-books'>
+					<span>Now showing {showingBooks.length} of {books.length} total</span>
+					<button onClick={this.clearQuery}>Show all</button>
+					</div>
+				)}
 					<ol className="books-grid">
 						{showingBooks.map((book) => {
 							var bid = book.id;
